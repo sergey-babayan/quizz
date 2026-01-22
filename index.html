@@ -1,0 +1,877 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Timed Quiz App</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      min-height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      padding: 20px;
+    }
+
+    .container {
+      background: white;
+      border-radius: 20px;
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+      max-width: 700px;
+      width: 100%;
+      padding: 40px;
+    }
+
+    .header {
+      text-align: center;
+      margin-bottom: 30px;
+    }
+
+    h1 {
+      color: #667eea;
+      font-size: 2em;
+      margin-bottom: 10px;
+    }
+
+    .timer {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      font-size: 1.5em;
+      color: #333;
+      margin: 20px 0;
+      padding: 15px;
+      background: #f8f9fa;
+      border-radius: 10px;
+    }
+
+    .timer.warning {
+      background: #fff3cd;
+      color: #856404;
+    }
+
+    .timer.danger {
+      background: #f8d7da;
+      color: #721c24;
+      animation: pulse 1s infinite;
+    }
+
+    @keyframes pulse {
+      0%, 100% { transform: scale(1); }
+      50% { transform: scale(1.05); }
+    }
+
+    .question-container {
+      margin-bottom: 30px;
+    }
+
+    .question-number {
+      color: #667eea;
+      font-weight: bold;
+      margin-bottom: 10px;
+    }
+
+    .question {
+      font-size: 1.3em;
+      color: #333;
+      margin-bottom: 25px;
+      line-height: 1.5;
+    }
+
+    .options {
+      display: flex;
+      flex-direction: column;
+      gap: 15px;
+    }
+
+    .option {
+      padding: 15px 20px;
+      border: 2px solid #e0e0e0;
+      border-radius: 10px;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      font-size: 1.1em;
+    }
+
+    .option:hover {
+      border-color: #667eea;
+      background: #f8f9ff;
+      transform: translateX(5px);
+    }
+
+    .option.selected {
+      background: #667eea;
+      color: white;
+      border-color: #667eea;
+    }
+
+    .next-btn {
+      width: 100%;
+      padding: 15px;
+      background: #667eea;
+      color: white;
+      border: none;
+      border-radius: 10px;
+      font-size: 1.1em;
+      font-weight: bold;
+      cursor: pointer;
+      margin-top: 20px;
+      transition: all 0.3s ease;
+    }
+
+    .next-btn:hover:not(:disabled) {
+      background: #5568d3;
+      transform: translateY(-2px);
+      box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+    }
+
+    .next-btn:disabled {
+      background: #ccc;
+      cursor: not-allowed;
+    }
+
+    .results {
+      display: none;
+    }
+
+    .results.show {
+      display: block;
+    }
+
+    .score {
+      text-align: center;
+      font-size: 2em;
+      color: #667eea;
+      margin-bottom: 30px;
+      padding: 20px;
+      background: #f8f9ff;
+      border-radius: 10px;
+    }
+
+    .review-question {
+      margin-bottom: 30px;
+      padding: 20px;
+      background: #f8f9fa;
+      border-radius: 10px;
+    }
+
+    .review-question-header {
+      font-size: 1.2em;
+      font-weight: bold;
+      margin-bottom: 15px;
+      color: #333;
+    }
+
+    .review-options {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      margin-top: 15px;
+    }
+
+    .review-option {
+      padding: 12px 15px;
+      border-radius: 8px;
+      border: 2px solid #e0e0e0;
+    }
+
+    .review-option.correct {
+      background: #d4edda;
+      border-color: #28a745;
+      color: #155724;
+      font-weight: bold;
+    }
+
+    .review-option.wrong {
+      background: #f8d7da;
+      border-color: #dc3545;
+      color: #721c24;
+    }
+
+    .review-option.user-correct {
+      background: #d4edda;
+      border-color: #28a745;
+      color: #155724;
+      font-weight: bold;
+    }
+
+    .status-icon {
+      display: inline-block;
+      margin-right: 8px;
+    }
+
+    .hidden {
+      display: none;
+    }
+  </style>
+</head>
+<body>
+<div class="container">
+  <div class="header">
+    <h1>⏱️ Timed Quiz</h1>
+  </div>
+
+  <div id="quiz" class="quiz-container">
+    <div class="timer" id="timer">
+      <span>⏰</span>
+      <span id="time">30</span>
+      <span>seconds</span>
+    </div>
+
+    <div class="question-container">
+      <div class="question-number" id="questionNumber"></div>
+      <div class="question" id="question"></div>
+      <div class="options" id="options"></div>
+    </div>
+
+    <button class="next-btn" id="nextBtn" disabled>Next Question</button>
+  </div>
+
+  <div id="results" class="results">
+    <div class="score" id="score"></div>
+    <div id="reviewContainer"></div>
+  </div>
+</div>
+
+<script>
+  if (!window.questions) {
+    window.questions = [
+    {
+        "question": "Where should data shared between multiple components be stored?",
+        "options": [
+            "Component",
+            "Service",
+            "Pipe",
+            "Directive"
+        ],
+        "answer": 2
+    },
+    {
+        "question": "What Angular service is used to make HTTP requests?",
+        "options": [
+            "Router",
+            "HttpClient",
+            "Injector",
+            "Location"
+        ],
+        "answer": 2
+    },
+    {
+        "question": "Which RxJS type emits values over time?",
+        "options": [
+            "Promise",
+            "Observable",
+            "Signal",
+            "EventEmitter"
+        ],
+        "answer": 2
+    },
+    {
+        "question": "How do you subscribe to an observable?",
+        "options": [
+            "await observable",
+            "observable.then()",
+            "observable.subscribe()",
+            "observable.emit()"
+        ],
+        "answer": 3
+    },
+    {
+        "question": "What operator transforms values from an observable?",
+        "options": [
+            "filter",
+            "map",
+            "subscribe",
+            "catchError"
+        ],
+        "answer": 2
+    },
+    {
+        "question": "Which operator is used to perform side effects?",
+        "options": [
+            "map",
+            "tap",
+            "filter",
+            "mergeMap"
+        ],
+        "answer": 2
+    },
+    {
+        "question": "How do you unsubscribe automatically in templates?",
+        "options": [
+            "manual unsubscribe",
+            "async pipe",
+            "takeUntil",
+            "setTimeout"
+        ],
+        "answer": 2
+    },
+    {
+        "question": "What does async pipe do?",
+        "options": [
+            "Creates observables",
+            "Subscribes and unsubscribes automatically",
+            "Transforms data",
+            "Caches values"
+        ],
+        "answer": 2
+    },
+    {
+        "question": "Which operator cancels previous HTTP requests?",
+        "options": [
+            "mergeMap",
+            "concatMap",
+            "switchMap",
+            "exhaustMap"
+        ],
+        "answer": 3
+    },
+    {
+        "question": "How do you send an HTTP request when a value changes?",
+        "options": [
+            "subscribe inside subscribe",
+            "use switchMap",
+            "use tap",
+            "use debounceTime"
+        ],
+        "answer": 2
+    },
+    {
+        "question": "What is the purpose of debounceTime?",
+        "options": [
+            "Cancel requests",
+            "Delay emissions",
+            "Retry requests",
+            "Combine observables"
+        ],
+        "answer": 2
+    },
+    {
+        "question": "Which RxJS operator filters values?",
+        "options": [
+            "map",
+            "filter",
+            "tap",
+            "scan"
+        ],
+        "answer": 2
+    },
+    {
+        "question": "Where should HTTP logic be placed?",
+        "options": [
+            "Component",
+            "Service",
+            "Module",
+            "Pipe"
+        ],
+        "answer": 2
+    },
+    {
+        "question": "What is the main role of a service?",
+        "options": [
+            "UI rendering",
+            "Data and logic sharing",
+            "Routing",
+            "Styling"
+        ],
+        "answer": 2
+    },
+    {
+        "question": "What decorator marks a class as injectable?",
+        "options": [
+            "@Component",
+            "@Directive",
+            "@Injectable",
+            "@NgModule"
+        ],
+        "answer": 3
+    },
+    {
+        "question": "What is a Subject?",
+        "options": [
+            "Cold observable",
+            "Hot observable",
+            "Promise",
+            "Signal"
+        ],
+        "answer": 2
+    },
+    {
+        "question": "What is BehaviorSubject useful for?",
+        "options": [
+            "One-time events",
+            "Storing current state",
+            "Delaying values",
+            "Error handling"
+        ],
+        "answer": 2
+    },
+    {
+        "question": "Which Subject type has an initial value?",
+        "options": [
+            "Subject",
+            "ReplaySubject",
+            "BehaviorSubject",
+            "AsyncSubject"
+        ],
+        "answer": 3
+    },
+    {
+        "question": "What does subscribe return?",
+        "options": [
+            "Observable",
+            "Promise",
+            "Subscription",
+            "Signal"
+        ],
+        "answer": 3
+    },
+    {
+        "question": "How do you stop listening to an observable?",
+        "options": [
+            "complete()",
+            "unsubscribe()",
+            "destroy()",
+            "finalize()"
+        ],
+        "answer": 2
+    },
+    {
+        "question": "What Angular feature replaces some RxJS use cases?",
+        "options": [
+            "Pipes",
+            "Signals",
+            "Modules",
+            "Guards"
+        ],
+        "answer": 2
+    },
+    {
+        "question": "What is a Signal in Angular?",
+        "options": [
+            "HTTP wrapper",
+            "Reactive value",
+            "Observable operator",
+            "Service"
+        ],
+        "answer": 2
+    },
+    {
+        "question": "How do you update a signal value?",
+        "options": [
+            "signal = value",
+            "signal.set(value)",
+            "signal.emit(value)",
+            "signal.next(value)"
+        ],
+        "answer": 2
+    },
+    {
+        "question": "What is computed() used for with signals?",
+        "options": [
+            "Side effects",
+            "Derived state",
+            "HTTP calls",
+            "Subscriptions"
+        ],
+        "answer": 2
+    },
+    {
+        "question": "What is effect() used for with signals?",
+        "options": [
+            "State storage",
+            "Side effects",
+            "Value mapping",
+            "HTTP only"
+        ],
+        "answer": 2
+    },
+    {
+        "question": "Where should component-specific state live?",
+        "options": [
+            "Service",
+            "Component",
+            "Module",
+            "Global store"
+        ],
+        "answer": 2
+    },
+    {
+        "question": "What is the default lifecycle hook for setup logic?",
+        "options": [
+            "ngOnChanges",
+            "ngOnInit",
+            "ngAfterViewInit",
+            "ngOnDestroy"
+        ],
+        "answer": 2
+    },
+    {
+        "question": "When does ngOnDestroy run?",
+        "options": [
+            "On init",
+            "On input change",
+            "When component is destroyed",
+            "On route change only"
+        ],
+        "answer": 3
+    },
+    {
+        "question": "Which form type uses FormControl and FormGroup?",
+        "options": [
+            "Template-driven",
+            "Reactive",
+            "Browser forms",
+            "HTML forms"
+        ],
+        "answer": 2
+    },
+    {
+        "question": "Where is validation logic usually placed in reactive forms?",
+        "options": [
+            "HTML only",
+            "Component class",
+            "Service",
+            "Module"
+        ],
+        "answer": 2
+    },
+    {
+        "question": "How do you listen to form value changes?",
+        "options": [
+            "(change) event",
+            "valueChanges observable",
+            "ngModelChange",
+            "form.submit"
+        ],
+        "answer": 2
+    },
+    {
+        "question": "Which operator combines multiple observables?",
+        "options": [
+            "map",
+            "merge",
+            "combineLatest",
+            "filter"
+        ],
+        "answer": 3
+    },
+    {
+        "question": "What does takeUntil commonly use?",
+        "options": [
+            "Promise",
+            "Subject",
+            "Signal",
+            "Timer"
+        ],
+        "answer": 2
+    },
+    {
+        "question": "What is the purpose of HttpInterceptor?",
+        "options": [
+            "Modify HTTP requests/responses",
+            "Handle routing",
+            "Manage state",
+            "Validate forms"
+        ],
+        "answer": 1
+    },
+    {
+        "question": "Where should loading state be stored?",
+        "options": [
+            "HTML only",
+            "Component or service",
+            "Module",
+            "Pipe"
+        ],
+        "answer": 2
+    },
+    {
+        "question": "How do you show observable data in template?",
+        "options": [
+            "subscribe in HTML",
+            "async pipe",
+            "ngIf only",
+            "setTimeout"
+        ],
+        "answer": 2
+    },
+    {
+        "question": "What does shareReplay do?",
+        "options": [
+            "Cancel requests",
+            "Cache last value",
+            "Delay emissions",
+            "Retry errors"
+        ],
+        "answer": 2
+    },
+    {
+        "question": "What does catchError do?",
+        "options": [
+            "Stop observable",
+            "Handle errors",
+            "Retry request",
+            "Log only"
+        ],
+        "answer": 2
+    },
+    {
+        "question": "Which operator retries failed HTTP calls?",
+        "options": [
+            "retry",
+            "map",
+            "filter",
+            "tap"
+        ],
+        "answer": 1
+    },
+    {
+        "question": "How do you pass data to a child component?",
+        "options": [
+            "Service only",
+            "@Input",
+            "Router",
+            "Signal only"
+        ],
+        "answer": 2
+    },
+    {
+        "question": "How does a child notify a parent?",
+        "options": [
+            "@Input",
+            "@Output with EventEmitter",
+            "Service",
+            "Signal only"
+        ],
+        "answer": 2
+    },
+    {
+        "question": "What does ChangeDetectionStrategy.OnPush rely on?",
+        "options": [
+            "Timers",
+            "Immutable inputs",
+            "Manual refresh only",
+            "Zones disabled"
+        ],
+        "answer": 2
+    },
+    {
+        "question": "What is the safest way to store temporary UI state?",
+        "options": [
+            "LocalStorage",
+            "Component memory",
+            "SessionStorage",
+            "Cookies"
+        ],
+        "answer": 2
+    },
+    {
+        "question": "What does ngIf do?",
+        "options": [
+            "Loops items",
+            "Conditionally renders",
+            "Styles elements",
+            "Binds events"
+        ],
+        "answer": 2
+    },
+    {
+        "question": "What does ngFor require for performance optimization?",
+        "options": [
+            "index",
+            "trackBy",
+            "pipe",
+            "signal"
+        ],
+        "answer": 2
+    },
+    {
+        "question": "Which Angular file bootstraps the app?",
+        "options": [
+            "index.html",
+            "main.ts",
+            "app.component.ts",
+            "polyfills.ts"
+        ],
+        "answer": 2
+    }
+];
+  }
+
+  let currentQuestion = 0;
+  let userAnswers = [];
+  let timeLeft = 30;
+  let timer;
+
+  const questions = window.questions;
+  const timerEl = document.getElementById('timer');
+  const timeEl = document.getElementById('time');
+  const questionNumberEl = document.getElementById('questionNumber');
+  const questionEl = document.getElementById('question');
+  const optionsEl = document.getElementById('options');
+  const nextBtn = document.getElementById('nextBtn');
+  const quizEl = document.getElementById('quiz');
+  const resultsEl = document.getElementById('results');
+
+  function startTimer() {
+    timer = setInterval(function() {
+      timeLeft--;
+      timeEl.textContent = timeLeft;
+
+      if (timeLeft <= 10) {
+        timerEl.classList.add('danger');
+      } else if (timeLeft <= 20) {
+        timerEl.classList.add('warning');
+      }
+
+      if (timeLeft === 0) {
+        clearInterval(timer);
+        handleTimeout();
+      }
+    }, 1000);
+  }
+
+  function handleTimeout() {
+    userAnswers[currentQuestion] = null;
+    if (currentQuestion < questions.length - 1) {
+      currentQuestion++;
+      loadQuestion();
+    } else {
+      showResults();
+    }
+  }
+
+  function loadQuestion() {
+    timeLeft = 30;
+    timeEl.textContent = timeLeft;
+    timerEl.classList.remove('warning', 'danger');
+    clearInterval(timer);
+    startTimer();
+
+    const q = questions[currentQuestion];
+    questionNumberEl.textContent = 'Question ' + (currentQuestion + 1) + ' of ' + questions.length;
+    questionEl.textContent = q.question;
+
+    optionsEl.innerHTML = '';
+    q.options.forEach(function(option, index) {
+      const optionEl = document.createElement('div');
+      optionEl.classList.add('option');
+      optionEl.textContent = option;
+      optionEl.onclick = function() {
+        selectOption(index + 1);
+      };
+      optionsEl.appendChild(optionEl);
+    });
+
+    nextBtn.disabled = true;
+  }
+
+  function selectOption(optionIndex) {
+    const options = document.querySelectorAll('.option');
+    options.forEach(function(opt) {
+      opt.classList.remove('selected');
+    });
+    options[optionIndex - 1].classList.add('selected');
+
+    userAnswers[currentQuestion] = optionIndex;
+    nextBtn.disabled = false;
+  }
+
+  nextBtn.onclick = function() {
+    clearInterval(timer);
+    if (currentQuestion < questions.length - 1) {
+      currentQuestion++;
+      loadQuestion();
+    } else {
+      showResults();
+    }
+  };
+
+  function showResults() {
+    quizEl.classList.add('hidden');
+    resultsEl.classList.add('show');
+
+    let correctCount = 0;
+    questions.forEach(function(q, index) {
+      if (userAnswers[index] === q.answer) {
+        correctCount++;
+      }
+    });
+
+    const scoreEl = document.getElementById('score');
+    const percentage = Math.round((correctCount / questions.length) * 100);
+    scoreEl.innerHTML = '<div>Your Score</div><div style="font-size: 1.5em; margin-top: 10px;">' +
+      correctCount + ' / ' + questions.length +
+      '</div><div style="font-size: 0.6em; margin-top: 10px; color: #666;">' +
+      percentage + '% Correct</div>';
+
+    const reviewContainer = document.getElementById('reviewContainer');
+    reviewContainer.innerHTML = '';
+
+    questions.forEach(function(q, index) {
+      const reviewDiv = document.createElement('div');
+      reviewDiv.classList.add('review-question');
+
+      const isCorrect = userAnswers[index] === q.answer;
+      const wasAnswered = userAnswers[index] !== null && userAnswers[index] !== undefined;
+
+      let headerHTML = '<div class="review-question-header">' +
+        (isCorrect ? '✅' : '❌') + ' Question ' + (index + 1) + ': ' + q.question +
+        '</div>';
+
+      let optionsHTML = '<div class="review-options">';
+      q.options.forEach(function(option, optIndex) {
+        const optionNumber = optIndex + 1;
+        const isCorrectAnswer = optionNumber === q.answer;
+        const isUserAnswer = optionNumber === userAnswers[index];
+
+        let className = 'review-option';
+        if (isCorrectAnswer) {
+          className += ' correct';
+        }
+        if (isUserAnswer && !isCorrectAnswer) {
+          className += ' wrong';
+        }
+        if (isUserAnswer && isCorrectAnswer) {
+          className += ' user-correct';
+        }
+
+        let label = option;
+        if (isCorrectAnswer) {
+          label = '✓ ' + label + ' (Correct Answer)';
+        }
+        if (isUserAnswer && !isCorrectAnswer) {
+          label = '✗ ' + label + ' (Your Answer)';
+        }
+        if (isUserAnswer && isCorrectAnswer) {
+          label = '✓ ' + label + ' (Your Answer)';
+        }
+
+        optionsHTML += '<div class="' + className + '">' + label + '</div>';
+      });
+      optionsHTML += '</div>';
+
+      let timeoutHTML = '';
+      if (!wasAnswered) {
+        timeoutHTML = '<div style="margin-top: 10px; color: #856404; font-style: italic;">⏱️ Time expired - No answer selected</div>';
+      }
+
+      reviewDiv.innerHTML = headerHTML + optionsHTML + timeoutHTML;
+      reviewContainer.appendChild(reviewDiv);
+    });
+  }
+
+  loadQuestion();
+</script>
+</body>
+</html>
